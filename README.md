@@ -103,6 +103,123 @@ To run the installed package from the terminal/command line:
 $ python -m electricitylci.main
 ```
 
+## State-level Brightway workflow
+
+The repository now ships with a non-interactive helper that builds and
+imports state-level LCIs directly into Brightway25.  The workflow is exposed
+through :mod:`electricitylci.state_brightway` and relies on the new
+``ELCI_STATE`` configuration (``electricitylci/modelconfig/ELCI_STATE_config.yml``).
+
+```py
+from electricitylci.state_brightway import (
+    generate_state_inventory,
+    import_state_inventory_to_brightway,
+    compute_traci_impacts,
+)
+
+# 1. Build the state-aggregated generation and mix processes
+state_run = generate_state_inventory()
+
+# 2. Import the JSON-LD archive into a Brightway project
+import_state_inventory_to_brightway(state_run["jsonld"], project_name="ELCI-States")
+
+# 3. Evaluate TRACI v2.1 impact scores for a specific state
+scores = compute_traci_impacts(
+    database="ELCI_STATE",
+    region="CA",
+    methods=[("TRACI 2.1", "Total", "global warming")],
+)
+```
+
+The helper functions automatically install the TRACI v2.1 LCIA package using
+``bw2io`` when it is not already available.  Make sure the required API keys
+are populated in ``ELCI_STATE_config.yml`` before running the workflow.
+
+### Running the state workflow on Google Colab
+
+The helper module can be executed end-to-end in a Colab notebook so long as the
+runtime has enough disk space (≈3 GB) and an active internet connection for the
+dataset downloads.  The outline below assumes a new Colab notebook with a
+Python 3 runtime:
+
+1. **Install the dependencies** – Colab instances do not persist packages
+   across sessions, so start each notebook with the required installations.  The
+   snippet below installs Brightway, ElectricityLCI, and the supporting
+   libraries:
+
+   ```python
+   !pip install -q git+https://github.com/USEPA/Federal-LCA-Commons-Elementary-Flow-List
+   !pip install -q git+https://github.com/USEPA/standardizedinventories
+   !pip install -q scipy brightway25
+   !pip install -q git+https://github.com/USEPA/ElectricityLCI.git
+   ```
+
+2. **Create the configuration file** – Copy the packaged
+   ``ELCI_STATE_config.yml`` to a writable location (for example, Colab’s working
+   directory) and add your API keys.  Using `pkgutil.get_data` avoids manual file
+   uploads:
+
+   ```python
+   from pathlib import Path
+   import pkgutil
+
+   config_path = Path.cwd() / "ELCI_STATE_config.yml"
+   if not config_path.exists():
+       data = pkgutil.get_data("electricitylci", "modelconfig/ELCI_STATE_config.yml")
+       config_path.write_bytes(data)
+
+   # TODO: replace the placeholder strings with your actual keys.
+   text = config_path.read_text()
+   text = text.replace("your-edx-api-key", "<EDX_KEY>")
+   text = text.replace("your-eia-api-key", "<EIA_KEY>")
+   text = text.replace("your-epa-api-key", "<EPA_KEY>")
+   config_path.write_text(text)
+   ```
+
+3. **Point ElectricityLCI to the edited configuration** – Override the default
+   model directory so the helper picks up the Colab-local configuration:
+
+   ```python
+   import electricitylci.model_config as model_config
+
+   model_config.config_directory = str(Path.cwd())
+   ```
+
+4. **Run the workflow** – Import the helper functions, generate the state-level
+   inventory, and push it into a Brightway project.  The example below writes the
+   TRACI v2.1 scores for California; adjust the region or methods as needed:
+
+   ```python
+   from electricitylci.state_brightway import (
+       generate_state_inventory,
+       import_state_inventory_to_brightway,
+       compute_traci_impacts,
+   )
+
+   run = generate_state_inventory()
+   import_state_inventory_to_brightway(run["jsonld"], project_name="ELCI-States", overwrite=True)
+   scores = compute_traci_impacts(
+       database="ELCI_STATE",
+       region="CA",
+       methods=[("TRACI 2.1", "Total", "global warming")],
+   )
+   scores
+   ```
+
+5. **Download the JSON-LD archive (optional)** – Colab stores generated files in
+   `/content`.  To use the inventory outside Colab, download the archive produced
+   in step 4:
+
+   ```python
+   from google.colab import files
+
+   files.download(run["jsonld"])
+   ```
+
+If you encounter HTTP 403 errors while running the notebook, double-check that
+the API keys in ``ELCI_STATE_config.yml`` are valid and that the corresponding
+services have been activated for your account.
+
 To run in a Python interpreter from within a cloned repository:
 
 ```py

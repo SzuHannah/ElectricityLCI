@@ -38,7 +38,7 @@ __all__ = [
 ##############################################################################
 # FUNCTIONS
 ##############################################################################
-def distribution_mix_dictionary():
+def distribution_mix_dictionary(subregion=None):
     """Create an openLCA schema dictionary of consumption mix processes for
     each eGRID subregion that accounts for electricity losses during
     transmission and distribution based on the YAML configuration value of
@@ -50,8 +50,20 @@ def distribution_mix_dictionary():
         An openLCA formatted dictionary of distribution mix processes for each
         eGRID subregion.
     """
+    if subregion is None:
+        subregion = model_specs.regional_aggregation
+
+    if subregion == "STATE":
+        from electricitylci.generation_mix import egrid_facilities_w_fuel_region
+
+        regions = (
+            egrid_facilities_w_fuel_region["State"].dropna().drop_duplicates().sort_values().tolist()
+        )
+    else:
+        regions = egrid_subregions
+
     distribution_dict = dict()
-    for reg in egrid_subregions:
+    for reg in regions:
         exchanges_list = []
         exchange(
             ref_exchange_creator(electricity_at_user_flow),

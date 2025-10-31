@@ -57,6 +57,7 @@ if not model_specs.replace_egrid:
         "PercentGenerationfromDesignatedFuelCategory",
         "Balancing Authority Name",
         "Balancing Authority Code",
+        "State",
     ]]
 
     # Get reference regional generation data by fuel type, add in NERC
@@ -95,8 +96,8 @@ def create_generation_mix_process_df_from_model_generation_data(
     subregion : str
         Description of single region or group of regions.
         Options include 'all' for all eGRID subregions, 'NERC' for all NERC
-        regions, 'BA' for all balancing authorities, or a single region
-        (unclear if single region will work).
+        regions, 'BA' for all balancing authorities, 'STATE' for U.S. state
+        aggregates, or a single region (unclear if single region will work).
 
     Returns
     -------
@@ -150,6 +151,8 @@ def create_generation_mix_process_df_from_model_generation_data(
         ]
     elif subregion == "FERC":
         database_for_genmix_final["Subregion"] = database_for_genmix_final["FERC_Region"]
+    elif subregion == "STATE":
+        database_for_genmix_final["Subregion"] = database_for_genmix_final["State"]
 
     if model_specs.keep_mixed_plant_category:
         mixed_criteria = (
