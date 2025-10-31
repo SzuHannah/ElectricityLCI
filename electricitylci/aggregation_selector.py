@@ -44,7 +44,7 @@ def subregion_col(subregion="BA"):
     ----------
     subregion : str, optional
         Subregion abbreviation.
-        Valid options include: 'eGRID', 'NERC', 'BA', 'US', 'FERC' or 'EIA'.
+        Valid options include: 'eGRID', 'NERC', 'BA', 'US', 'FERC', 'EIA', or 'STATE'.
         Defaults to "BA".
 
     Returns
@@ -54,7 +54,7 @@ def subregion_col(subregion="BA"):
         The list item is the correct region name associated with the given
         region abbreviation; for use with pandas data frames.
     """
-    available_options = ["eGRID", "NERC", "BA", "US", "FERC", "EIA"]
+    available_options = ["eGRID", "NERC", "BA", "US", "FERC", "EIA", "STATE"]
     if subregion not in available_options:
         logging.warning("Invalid subregion specified - US selected")
         region_agg = None
@@ -64,6 +64,8 @@ def subregion_col(subregion="BA"):
         region_agg = ["NERC"]
     elif subregion == "BA":
         region_agg = ["Balancing Authority Name"]
+    elif subregion == "STATE":
+        region_agg = ["State"]
     elif subregion == "US":
         region_agg = None
     elif subregion == "FERC":

@@ -80,7 +80,7 @@ def aggregate_gen(gen_df, subregion="BA"):
         or get_generation_process_df.
     subregion : str, optional
         The level of subregion that the data will be aggregated to. Choices
-        are 'eGRID', 'NERC', 'FERC', 'BA', 'US'. Defaults to 'BA'.
+        are 'eGRID', 'NERC', 'FERC', 'BA', 'STATE', 'US'. Defaults to 'BA'.
 
     Returns
     -------
@@ -330,13 +330,13 @@ def get_generation_mix_process_df(regions=None):
     if regions is None:
         regions = config.model_specs.regional_aggregation
 
-    if config.model_specs.replace_egrid or regions in ["BA", "FERC", "US"]:
-        if regions in ["BA","FERC","US"] and not (
+    if config.model_specs.replace_egrid or regions in ["BA", "FERC", "US", "STATE"]:
+        if regions in ["BA", "FERC", "US", "STATE"] and not (
                 config.model_specs.replace_egrid):
             logging.info(
                 "EIA923 generation data are being used for the generation mix "
                 "despite replace_egrid = False. The reference eGrid "
-                "electricity data cannot be reorganized to match BA or FERC "
+                "electricity data cannot be reorganized to match BA, STATE, or FERC "
                 "regions. For the US region, the function for generating US "
                 "mixes does not support aggregating to the US."
                 )
@@ -381,7 +381,7 @@ def get_generation_process_df(regions=None, **kwargs):
     regions : str, optional
         Regions to include in the analysis (the default is None, which uses
         the value read from YAML config file). Other options include
-        "eGRID", "NERC", "BA", "US", "FERC", and "EIA".
+        "eGRID", "NERC", "BA", "STATE", "US", "FERC", and "EIA".
     kwargs : dict, optional
         Optional additional arguments may include:
 
@@ -486,6 +486,8 @@ def get_generation_process_df(regions=None, **kwargs):
 
         if regions in ["BA", "FERC", "US"]:
             generation_process_df = aggregate_gen(gen_plus_fuels, "BA")
+        elif regions == "STATE":
+            generation_process_df = aggregate_gen(gen_plus_fuels, "STATE")
         else:
             generation_process_df = aggregate_gen(gen_plus_fuels, regions)
         logging.info("Aggregation complete!")
@@ -845,7 +847,8 @@ def write_distribution_dict():
     """
     from electricitylci.distribution import distribution_mix_dictionary
 
-    return distribution_mix_dictionary()
+    return distribution_mix_dictionary(
+        subregion=config.model_specs.regional_aggregation)
 
 
 def write_distribution_mix_to_dict(dm_dict, gm_dict, subregion=None):
@@ -893,7 +896,7 @@ def write_gen_fuel_database_to_dict(
         "unit processes" are only generated when written to json-ld.
     subregion : str, optional
         The level of subregion that the data will be aggregated to. Choices
-        are 'all', 'NERC', 'BA', 'US'. Defaults to 'BA'.
+        are 'all', 'NERC', 'BA', 'STATE', 'US'. Defaults to 'BA'.
 
     Returns
     -------

@@ -128,6 +128,12 @@ def run_distribution(generation_process_dict):
     # This is because the consumption mixes are based on imports from
     # balancing authority areas.
     logging.info("get gen mix process")
+    if config.model_specs.regional_aggregation == "STATE":
+        logging.info(
+            "STATE aggregation selected; skipping distribution and trading routines"
+        )
+        return {}
+
     if config.model_specs.regional_aggregation in ["FERC", "US"]:
         generation_mix_df = get_generation_mix_process_df("BA")
     else:
